@@ -1,0 +1,159 @@
+name: build
+
+on:
+  push:
+    branches:
+      - main
+
+env:
+  VERSION: v0.39.0
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os:
+          - "macos-15"
+          - "macos-13"
+        cc:
+          - "clang"
+        cxx:
+          - "clang++"
+        include:
+          - os: "macos-15"
+            arch: "arm64"
+          - os: "macos-13"
+            arch: "x86_64"
+    steps:
+      - name: Download MPV source code
+        run: |
+          wget https://github.com/mpv-player/mpv/archive/refs/tags/${{ env.VERSION }}.tar.gz
+          tar -xzf ${{ env.VERSION }}.tar.gz --strip-components=1
+
+      - name: Remove stray upstream python binary symlinks under /usr/local
+        run: |
+          find /usr/local/bin -lname '*/Library/Frameworks/Python.framework/*' -delete -print
+          brew unlink python && brew link --overwrite python
+
+      - name: Change Xcode version
+        if: ${{ matrix.xcode != '' }}
+        run: |
+          sudo xcode-select -s /Applications/${{ matrix.xcode }}.app
+
+      - name: Install dependencies
+        run: |
+          brew update
+          brew install -q autoconf automake pkg-config libtool python freetype fribidi little-cms2 \
+            luajit libass ffmpeg meson uchardet mujs libplacebo molten-vk vulkan-loader vulkan-headers
+
+      - name: Build with meson
+        id: build
+        run: |
+          export CFLAGS="$CFLAGS -Wno-error=deprecated -Wno-error=deprecated-declarations -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=3"
+
+          FFMPEG_SYSROOT="${HOME}/deps/sysroot"
+          MPV_INSTALL_PREFIX="${HOME}/out/mpv"
+          MPV_VARIANT="${TRAVIS_OS_NAME}"
+
+          if [[ -d "./build/${MPV_VARIANT}" ]] ; then
+              rm -rf "./build/${MPV_VARIANT}"
+          fi
+
+          PKG_CONFIG_PATH="${FFMPEG_SYSROOT}/lib/pkgconfig/" CC="${CC}" CXX="${CXX}" \
+          meson setup build --werror \
+            -Dlibmpv=true -Dtests=true \
+            -Dprefix="${MPV_INSTALL_PREFIX}" \
+            -Dobjc_args="-Wno-error=deprecated -Wno-error=deprecated-declarations" \
+            -D{gl,iconv,lcms2,lua,jpeg,plain-gl,zlib}=enabled \
+            -D{cocoa,coreaudio,gl-cocoa,videotoolbox-gl,videotoolbox-pl}=enabled \
+            -D{swift-build,macos-cocoa-cb,macos-media-player,macos-touchbar,vulkan}=enabled
+
+          meson compile -C build -j4
+          meson install -C build
+          ./build/mpv -v --no-config
+        env:
+          CC: "${{ matrix.cc }}"
+          CXX: "${{ matrix.cxx }}"
+          TRAVIS_OS_NAME: "${{ matrix.os }}"
+
+      - name: Create App Bundle
+        run: |
+          meson compile -C build macos-bundle
+
+      - name: Print meson log
+        if: ${{ failure() && steps.build.outcome == 'failure' }}
+        run: |
+          cat ./build/meson-logs/meson-log.txt
+
+      - name: Run meson tests
+        id: tests
+        run: |
+          meson test -C build
+
+      - name: Print meson test log
+        if: ${{ failure() && steps.tests.outcome == 'failure' }}
+        run: |
+          cat ./build/meson-logs/testlog.txt
+
+      - name: Create DMG
+        run: |
+          mkdir -p /tmp/mpv_dmg
+          cp -R build/mpv.app /tmp/mpv_dmg/
+          ln -s /Applications /tmp/mpv_dmg/Applications
+
+          MAXIMUM_CREATE_ATTEMPTS=3
+          CREATE_ATTEMPTS=0
+          until
+              (( CREATE_ATTEMPTS++ ))
+              hdiutil create -volname "mpv" -srcfolder /tmp/mpv_dmg -ov -format UDZO mpv_macos_${{ env.VERSION }}_${{ matrix.arch }}.dmg
+              EXITCODE=$?
+
+              if (( EXITCODE ==  0 )); then
+                  break
+              fi
+
+              if (( EXITCODE != 16 )); then
+                  exit $EXITCODE
+              fi
+          do
+              if (( CREATE_ATTEMPTS == MAXIMUM_CREATE_ATTEMPTS )); then
+                  exit 16
+              fi
+
+              sleep $(( 1 * (2 ** CREATE_ATTEMPTS) ))
+          done
+          unset CREATE_ATTEMPTS
+
+      - name: Upload DMG
+        uses: actions/upload-artifact@v4
+        with:
+          name: build_artifact_${{ matrix.arch }}
+          path: mpv_macos_${{ env.VERSION }}_${{ matrix.arch }}.dmg
+
+  release:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Get release notes
+        run: |
+          wget https://raw.githubusercontent.com/mpv-player/mpv/refs/tags/${{ env.VERSION }}/RELEASE_NOTES
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: build_artifact_*
+          merge-multiple: true
+
+      - name: Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: ${{ env.VERSION }}
+          tag_name: ${{ env.VERSION }}
+          body_path: ./RELEASE_NOTES
+          prerelease: false
+          files: |
+            mpv_macos_${{ env.VERSION }}_arm64.dmg
+            mpv_macos_${{ env.VERSION }}_x86_64.dmg
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
