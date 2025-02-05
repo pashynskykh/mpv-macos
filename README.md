@@ -1,6 +1,6 @@
 # mpv-macos
 
-mpv-macos is a macOS packaging for the latest stable release of [mpv](https://github.com/mpv-player/mpv).
+The goal of this project is to provide a MacOS packages for the latest stable release of [mpv](https://github.com/mpv-player/mpv). Here you'll find builds for both Apple Silicon and Intel Macs.
 
 ## Downloads
 
