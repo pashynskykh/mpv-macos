@@ -29,6 +29,20 @@ If you've forgotten to remove the "quarantine" attribute, you'll receive the fol
 
 This happens because I do not notarize the macOS version of the mpv: I don't have a paid Apple Developer license and I don't want to support this signing mechanism that is put behind a paywall without providing significant gains.
 
+### How do I use mpv on MacOS from the Terminal?
+
+There are two ways to make `mpv` available on the terminal:
+
+1. Create an alias in your `.zshrc`, `.bashrc`, or `config.fish` file, depending on the shell you are using. For example, let's add an alias for ZSH by adding the following line to `~/.zshrc`:
+   ```bash
+   alias mpv="/Applications/mpv.app/Contents/MacOS/mpv"
+   ```
+   After that, you'll need to reopen the terminal and the `mpv` command will be available to you.
+2. Create a soft link to one of your paths in `$PATH`. For example:
+   ```bash
+   ln -s /Applications/mpv.app/Contents/MacOS/mpv /usr/local/bin/mpv
+   ```
+
 ### There's a new version of mpv out. When will you update?
 
 As soon as I manage to get some time away from work.
