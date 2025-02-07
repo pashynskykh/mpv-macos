@@ -40,7 +40,7 @@ There are two ways to make `mpv` available on the terminal:
    After that, you'll need to reopen the terminal and the `mpv` command will be available to you.
 2. Create a soft link to one of your paths in `$PATH`. For example:
    ```bash
-   ln -s /Applications/mpv.app/Contents/MacOS/mpv /usr/local/bin/mpv
+   sudo ln -s /Applications/mpv.app/Contents/MacOS/mpv /usr/local/bin/mpv
    ```
 
 ### There's a new version of mpv out. When will you update?
