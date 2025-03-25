@@ -11,16 +11,16 @@ Built application can be downloaded from the [Releases](https://github.com/pashy
 1. Mount the DMG and drag and drop the app into your Applications directory.
 2. Remove the "quarantine" attribute from the app:
    ```bash
-   xattr -d com.apple.quarantine /Applications/mpv.app
+   $ xattr -d com.apple.quarantine /Applications/mpv.app
    ```
 
 ## FAQ
 
 ### Can I trust your builds?
 
-My mpv packages are built directly from source and I don't make any changes or even store the source code in this repository.
+My mpv packages are built directly from source and I don't make any changes or even store the mpv source code in this repository.
 
-Also, you don't have to trust me, since you can check the build.yml file in this repository and make sure that it is indeed built from the original source code of the latest stable mpv release, without any modifications.
+Also, you don't have to trust me, since you can check the `build.yml` file in this repository and make sure that it is indeed built from the original source code of the latest stable mpv release, without any modifications.
 
 ### Why I can't open the app after installation?
 
@@ -34,13 +34,13 @@ This happens because I do not notarize the macOS version of the mpv: I don't hav
 There are two ways to make `mpv` available on the terminal:
 
 1. Create an alias in your `.zshrc`, `.bashrc`, or `config.fish` file, depending on the shell you are using. For example, let's add an alias for ZSH by adding the following line to `~/.zshrc`:
-   ```bash
+   ```sh
    alias mpv="/Applications/mpv.app/Contents/MacOS/mpv"
    ```
    After that, you'll need to reopen the terminal and the `mpv` command will be available to you.
 2. Create a soft link to one of your paths in `$PATH`. For example:
-   ```bash
-   sudo ln -s /Applications/mpv.app/Contents/MacOS/mpv /usr/local/bin/mpv
+   ```sh
+   # ln -s /Applications/mpv.app/Contents/MacOS/mpv /usr/local/bin/mpv
    ```
 
 ### There's a new version of mpv out. When will you update?
