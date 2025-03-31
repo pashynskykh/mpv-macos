@@ -152,6 +152,8 @@ jobs:
           tag_name: ${{ env.VERSION }}
           body_path: ./RELEASE_NOTES
           prerelease: false
+          draft: false
+          make_latest: true
           files: |
             mpv_macos_${{ env.VERSION }}_arm64.dmg
             mpv_macos_${{ env.VERSION }}_x86_64.dmg
