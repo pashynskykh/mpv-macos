@@ -1,6 +1,6 @@
 # mpv-macos
 
-The goal of this project is to provide a MacOS packages for the latest stable release of [mpv](https://github.com/mpv-player/mpv). Here you'll find builds for both Apple Silicon and Intel Macs.
+The goal of this project is to provide a MacOS packages for the latest stable release of [mpv](https://github.com/mpv-player/mpv) for Apple Silicon Macs.
 
 ## Downloads
 
