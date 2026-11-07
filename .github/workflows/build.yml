@@ -6,7 +6,7 @@ on:
       - main
 
 env:
-  VERSION: v0.41.0
+  VERSION: v0.42.0
 
 jobs:
   build:
@@ -15,7 +15,6 @@ jobs:
       matrix:
         os:
           - "macos-latest"
-          - "macos-15-intel"
         cc:
           - "clang"
         cxx:
@@ -23,8 +22,6 @@ jobs:
         include:
           - os: "macos-latest"
             arch: "arm64"
-          - os: "macos-15-intel"
-            arch: "x86_64"
     steps:
       - name: Download MPV source code
         run: |
@@ -44,6 +41,7 @@ jobs:
       - name: Install dependencies
         run: |
           brew update
+          brew upgrade --yes
           brew install -q autoconf automake pkg-config libtool python freetype fribidi little-cms2 \
             luajit libass ffmpeg meson uchardet mujs libplacebo molten-vk vulkan-loader vulkan-headers
 
@@ -126,7 +124,7 @@ jobs:
           unset CREATE_ATTEMPTS
 
       - name: Upload DMG
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: build_artifact_${{ matrix.arch }}
           path: mpv_macos_${{ env.VERSION }}_${{ matrix.arch }}.dmg
@@ -140,13 +138,13 @@ jobs:
           wget https://raw.githubusercontent.com/mpv-player/mpv/refs/tags/${{ env.VERSION }}/RELEASE_NOTES
 
       - name: Download artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           pattern: build_artifact_*
           merge-multiple: true
 
       - name: Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           name: ${{ env.VERSION }}
           tag_name: ${{ env.VERSION }}
@@ -156,6 +154,5 @@ jobs:
           make_latest: true
           files: |
             mpv_macos_${{ env.VERSION }}_arm64.dmg
-            mpv_macos_${{ env.VERSION }}_x86_64.dmg
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
